@@ -6,12 +6,11 @@ exports.getAddProduct = (req, res) => {
 
 exports.postAddProduct = (req, res) => {
   const { title, imageUrl, price, description } = req.body;
-  // Product.create - the same,
-  // but if we have associations in SQL, we can create from user model, due to connect in tables
-  req.user.createProduct({ title, imageUrl, price, description })
-    .then(result => {
+  const product = new Product({ title, imageUrl, price, description });
+
+  product.save()
+    .then(() => {
       res.redirect('/admin/products');
-      console.log('CREATED PRODUCT');
     })
     .catch(err => {
       console.log(err);
@@ -25,10 +24,8 @@ exports.getEditProduct = (req, res) => {
   }
   const prodId = req.params.productId;
 
-  // Product.findByPk(prodId)
-  req.user.getProducts({ where: { id: prodId } })
-    .then(products => {
-      const product = products[0];
+  Product.findById(prodId)
+    .then(product => {
       if (!product) {
         return res.redirect('/')
       }
@@ -46,15 +43,10 @@ exports.getEditProduct = (req, res) => {
 
 exports.postEditProduct = (req, res) => {
   const { productId, title, imageUrl, price, description } = req.body;
-  Product.findByPk(productId)
-    .then(product => {
-      product.title = title;
-      product.imageUrl = imageUrl;
-      product.price = price;
-      product.description = description;
-      return product.save();
-    })
-    .then(result => {
+
+  const product = new Product({ id: productId, title, description, imageUrl, price });
+  product.save()
+    .then(() => {
       console.log("UPDATED PRODUCT");
       res.redirect('/admin/products');
     })
@@ -65,13 +57,9 @@ exports.postEditProduct = (req, res) => {
 
 exports.postDeleteProduct = (req, res) => {
   const { productId } = req.body;
-  Product.findByPk(productId)
-    .then(product => {
-      return product.destroy();
-    })
-    .then(result => {
+  Product.deleteById(productId)
+    .then(() => {
       res.redirect('/admin/products');
-      console.log('DESTROYED PRODUCT');
     })
     .catch(err => {
       console.log(err);
@@ -79,8 +67,7 @@ exports.postDeleteProduct = (req, res) => {
 };
 
 exports.getProducts = (req, res) => {
-  // Product.findAll()
-  req.user.getProducts()
+  Product.fetchAll()
     .then(products => {
       res.render('admin/products', { pageTitle: 'Admin Products', prods: products, path: '/admin/products' });
     })
